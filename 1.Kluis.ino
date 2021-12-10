@@ -41,10 +41,10 @@ int geluidBuzzer = 11;
 int slotServo = 12;
 
 /**************Knoppen*******************/
-int knopSlot = 14; //14 = A1.
-int knopRotary = 15; //15 = A2.
-int knopGroen = 16; //16 = A3.
-int knopRood = 17; //17 = A4.
+int knopSlot = 14; //14 = A0.
+int knopRotary = 15; //15 = A1.
+int knopGroen = 16; //16 = A2.
+int knopRood = 17; //17 = A3.
 
 /**************Globale Variablen*******************/
 byte data;    //Stuurt de data van de rotary encoder naar het schuifregister
@@ -53,7 +53,11 @@ byte rotaryWaarde = 0; //Dit slaat de huidige waarde van de rotary encoder op.
 byte displayWaarde = 0; //De waarde die op het scherm komt te staan.
 byte laatsteDraaiwaarde = 0; //Dit is om te ontdekken of er gedraaid wordt.
 byte bcdLine = 0; //Dit is om te zorgen dat de waardes niet tussen 0 en 9 komen.
-bool laatsteGedrukt = false; //Dit is voor de knop voor een soort latch.
+bool rotaryGedrukt = LOW; //Dit is voor de knop voor een soort latch.
+bool groenGedrukt = LOW; //Dit is voor de knop voor een soort latch.
+bool roodGedrukt = LOW; //Dit is voor de knop voor een soort latch.
+
+byte codeIngevoerd = 0;
 
 // Setup
 void setup()
@@ -96,10 +100,11 @@ Knop Slot
 // Main loop
 void loop()
 {
-  /**************Rotaryencoder knop*******************/
-  if(laatsteGedrukt == HIGH && digitalRead(knopRotary) == LOW) //Is er gedrukt?
+  /**************Knoppen*******************/
+  //Rotary knop
+  if(rotaryGedrukt == HIGH && digitalRead(knopRotary) == LOW) //Is er gedrukt?
   {
-    BuzzerActie(1);
+    BuzzerActie(0);
     bcdWaarde[bcdLine] = rotaryWaarde; //De waarde van de knop de waarde van bcdLine.
     bcdLine++; //Zoek data van het volgende scherm.
     if(bcdLine == 3)// Als die 3 is moet die naar nummer 0 gaan.
@@ -109,7 +114,41 @@ void loop()
     rotaryWaarde = bcdWaarde[bcdLine]; //Stop de huidige data van dit scherm op het scherm.
     Serial.println("Knop is gedrukt");
   }
-  laatsteGedrukt = digitalRead(knopRotary); //Zodat er geen redruk komt.
+  rotaryGedrukt = digitalRead(knopRotary); //Zodat er geen redruk komt.
+
+  //Groene knop. Deze moet gedrukt worden als de waarde op het scherm ingevoerd moet worden.
+  if(groenGedrukt == HIGH && digitalRead(knopGroen) == LOW) //Is er gedrukt?
+  {
+    BuzzerActie(0);
+    codeIngevoerd++;
+
+    if(bcdWaarde == juist)
+    {
+      open kluis
+    }
+    else
+    {
+      for (int i = 0; i < 3; i++) //reset de waardes op het scherm.
+      {
+        bcdWaarde[i] = 0;
+      }
+      
+    }
+
+
+
+    Serial.println("Knop is gedrukt");
+  }
+  groenGedrukt = digitalRead(knopGroen); //Zodat er geen redruk komt.
+
+  //Rode knop
+  if(roodGedrukt == HIGH && digitalRead(knopRood) == LOW) //Is er gedrukt?
+  {
+    BuzzerActie(0);
+
+    Serial.println("Knop is gedrukt");
+  }
+  roodGedrukt = digitalRead(knopRood); //Zodat er geen redruk komt.
 
   /**************Rotaryencoder*******************/
   if(digitalRead(rotaryLinks) != laatsteDraaiwaarde) //Is er gedraaid?
@@ -138,7 +177,6 @@ void loop()
   /**************Rotary data to Register*******************/
   for(int i = 0; i < 3; i++) //Doe 3 keer
   {
-
     if(bcdLine == i) //Is dit scherm geselecteerd?
     {
       data = rotaryWaarde; //Stop de waarde in data
@@ -170,9 +208,9 @@ void loop()
       break;
     }
     updateShiftRegister(); //Plaatst de data op het actieve 7-segmenten display.
-
-
   }
+  Serial.println(bcdLine);
+  delay(1000)
 }
 
 void updateShiftRegister()
