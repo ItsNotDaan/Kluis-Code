@@ -10,6 +10,8 @@
 */
 
 // ----- include libraries -----
+#include <Wire.h>
+#include <Servo.h>
 
 // ----- Declare Constants -----
 
@@ -56,6 +58,8 @@ byte bcdLine = 0; //Dit is om te zorgen dat de waardes niet tussen 0 en 9 komen.
 bool rotaryGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool groenGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool roodGedrukt = LOW; //Dit is voor de knop voor een soort latch.
+bool slotGedrukt = LOW;
+bool deurOpen = false; //Dit is om te kijken of de deur dicht is.
 
 byte codeIngevoerd = 0;
 
@@ -101,10 +105,20 @@ Knop Slot
 void loop()
 {
   /**************Knoppen*******************/
+  kijkSlotKnop();
+  while(deurOpen == true)//Zolang de deur open is.
+  {
+    buzzerActie(3)//Alarm
+    kijkSlotKnop();
+    //Deur moet dicht.
+  }
+
   kijkRotaryKnop();
+
   int codeModus = kijkGroeneKnop();
   if(codeModus == 1) //Goeie code
   {
+    "Servo open"
     bool wacht = true;
     while (wacht == true)
     {
@@ -134,6 +148,19 @@ void updateShiftRegister()
   shiftOut(dataPin, klokPin, MSBFIRST, data); //Shift de waarde van data in het register.
   //MSB eerst. dus 0000 0110 wordt 0110 0000 als er wordt gekeken vanaf rechts.
   digitalWrite(latchPin, HIGH); //Er mag geen data toegevoegd worden in het register.
+}
+
+void kijkSlotKnop()
+{
+  if(slotGedrukt == HIGH && digitalRead(knopSlot) == LOW)//Deur open??
+  {
+    deurOpen = true;
+  }
+  else
+  {
+    deurOpen = false;
+  }
+  slotGedrukt = digitalRead(knopSlot);
 }
 
 void kijkRotaryKnop()
@@ -301,6 +328,10 @@ void buzzerActie(int actie)
       delay(400);
       tone(geluidBuzzer,200,600);
       delay(600);
+    break;
+    case 3: //Kluis deur open
+      tone(geluidBuzzer,500,500);
+      delay(1000);
     break;
   }
 }
