@@ -108,7 +108,7 @@ void loop()
     bool wacht = true;
     while (wacht == true)
     {
-      
+
     }
   }
   else if(codeModus == 2)//drie keer fout
