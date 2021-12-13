@@ -50,16 +50,20 @@ int knopRood = 17; //17 = A3.
 
 /**************Globale Variablen*******************/
 byte data;    //Stuurt de data van de rotary encoder naar het schuifregister
+byte hoofdCode[3] = {1, 2, 3};
+byte pinCode[3] = {0, 0, 0};
 byte bcdWaarde[3] = {0, 0, 0}; //Maak een lege array
 byte rotaryWaarde = 0; //Dit slaat de huidige waarde van de rotary encoder op.
 byte displayWaarde = 0; //De waarde die op het scherm komt te staan.
 byte laatsteDraaiwaarde = 0; //Dit is om te ontdekken of er gedraaid wordt.
-byte bcdLine = 0; //Dit is om te zorgen dat de waardes niet tussen 0 en 9 komen.
+byte bcdLine = 2; //Dit is om te zorgen dat de waardes niet tussen 0 en 9 komen.
 bool rotaryGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool groenGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool roodGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool slotGedrukt = LOW;
-bool deurOpen = false; //Dit is om te kijken of de deur dicht is.
+int count1 = 0;
+int count2 = 0;
+int count3 = 0;
 
 byte codeIngevoerd = 0;
 
@@ -104,32 +108,121 @@ Knop Slot
 // Main loop
 void loop()
 {
-  /**************Knoppen*******************/
-  kijkSlotKnop();
+  /**************Deur open?*******************/
+  bool deurOpen;
+  if(kijkSlotKnop() == true) //Deur open?
+  {
+    deurOpen = true;
+  }
   while(deurOpen == true)//Zolang de deur open is.
   {
     buzzerActie(3)//Alarm
-    kijkSlotKnop();
+    if (kijkSlotKnop() == false)//Deur weer dicht?
+    {
+      //Slot dicht.
+      deurOpen = false; //
+    }
     //Deur moet dicht.
   }
 
+  /**************Check code*******************/
   kijkRotaryKnop();
 
   int codeModus = kijkGroeneKnop();
   if(codeModus == 1) //Goeie code
   {
+    //reset de waardes in het systeem.
+    for(int i = 0; i < 3; i++)
+    {
+      bcdWaarde[i] = 0;
+    }
+    bcdLine = 0;
+    /**************Deur open + code kunnen veranderen*******************/
     "Servo open"
     bool wacht = true;
-    while (wacht == true)
+    while(wacht == true)
     {
+      if((kijkSlotKnop() == false) && (kijkGroeneKnop() == true)) //Deur dicht en groene knop ingedrukt? Deur dicht.
+      {
+        "servo dicht"
+        wacht = false;
+      }
+
+      if(kijkRodeKnop() == true) //Rode knop ingedrukt? Code veranderen
+      {
+        for(int i = 0; i < 3; i++)
+        {
+          bcdWaarde[i] = 0;
+        }
+        bcdLine = 0;
+
+        bool wacht2 = true;
+        while(wacht2 == true)
+        {
+          kijkRotaryencoder();
+          schermAansturen();
+
+          if(knopGroen == LOW) //Set nieuwe waarde als code.
+          {
+            for(int i = 0; i < 3; i++)
+            {
+              pinCode[i] = bcdWaarde[i];//Set de bcdWaarde als de code.
+            }
+            wacht2 = false;//uit de while.
+          }
+        }
+      }
 
     }
   }
+
   else if(codeModus == 2)//drie keer fout
+  {
+    for(int i = 0; i < 3; i++)
+    {
+      bcdWaarde[i] = 0;
+    }
+    bcdLine = 0;
+
+    bool wacht = true;
+    while(wacht == true)
+    {
+      buzzerActie(3) //alarm
+
+      kijkRotaryencoder();
+      schermAansturen();
+
+      int goeieCode = 0;
+      if(knopGroen == LOW) //Set nieuwe waarde als code.
+      {
+        for(int i = 0; i < 3; i++)
+        {
+          if (bcdWaarde[i] == hoofdCode[i]) //is de ingevulde waarde de hoofdcode?
+          {
+            goeieCode++;
+          }
+        }
+        if(goeieCode == 3)//code goed?
+        {
+          wacht = false;
+        }
+        else//Reset de lines.
+        {
+          for(int i = 0; i < 3; i++)
+          {
+            bcdWaarde[i] = 0;
+          }
+          bcdLine = 0;
+        }
+      }
+    }
+  }
+
+  if (kijkRodeKnop() == true)
   {
 
   }
-  kijkRodeKnop();
+
 
 
 
@@ -154,13 +247,16 @@ void kijkSlotKnop()
 {
   if(slotGedrukt == HIGH && digitalRead(knopSlot) == LOW)//Deur open??
   {
-    deurOpen = true;
-  }
-  else
-  {
-    deurOpen = false;
+
   }
   slotGedrukt = digitalRead(knopSlot);
+
+  bool gedrukt = false;
+  if(digitalRead(knopSlot) == LOW)
+  {
+    gedrukt = true; //return true als
+  }
+  return gedrukt;
 }
 
 void kijkRotaryKnop()
@@ -179,6 +275,13 @@ void kijkRotaryKnop()
     Serial.println("Knop is gedrukt");
   }
   rotaryGedrukt = digitalRead(knopRotary); //Zodat er geen redruk komt.
+
+  bool gedrukt = false;
+  if(digitalRead(knopRotary) == LOW)
+  {
+    gedrukt = true; //return true als
+  }
+  bool gedrukt;
 }
 
 void kijkGroeneKnop()
@@ -224,6 +327,13 @@ void kijkRodeKnop()
     Serial.println("Knop is gedrukt");
   }
   roodGedrukt = digitalRead(knopRood); //Zodat er geen redruk komt.
+
+  bool gedrukt = false;
+  if(digitalRead(knopRood) == LOW)
+  {
+    gedrukt = true; //return true als  knop rood is gedrukt
+  }
+  return gedrukt;
 }
 
 void kijkRotaryencoder()
@@ -275,16 +385,65 @@ void schermAansturen()
     switch(i) //Zet seven segment aan welke data nodig heeft..
     {
       case 0:
-        digitalWrite(sevenSeg1, HIGH); //Scherm 1 aan.
+        count1 = count1 + 1;
+
+        if (((count1 >= 1) && (count1 <= 50)) && (bcdLine == 2) || (bcdLine == 0) || (bcdLine == 1) )
+        {
+        digitalWrite(sevenSeg1, HIGH);
+
+        }
+        else if (((count1 > 100) && (count1 <= 100)) && (bcdLine == 2))
+        {
+         digitalWrite(sevenSeg1, LOW);
+        }
+
+        if (count1 > 100 && (bcdLine == 2))
+        {
+          count1 = 1;
+        }
         delay(1); //Dit is om het andere scherm te laten doven.
+
+
       break;
       case 1:
-        digitalWrite(sevenSeg2, HIGH); //Scherm 2 aan.
+        count2 = count2 + 1;
+
+        if (((count2 >= 1) && (count2 <= 50)) && (bcdLine == 0) || (bcdLine == 2) || (bcdLine == 1) )
+        {
+        digitalWrite(sevenSeg2, HIGH);
+
+        }
+        else if (((count2 > 100) && (count2 <= 100)) && (bcdLine == 0))
+        {
+         digitalWrite(sevenSeg2, LOW);
+        }
+
+        if (count2 > 100 && (bcdLine == 0))
+        {
+          count2 = 1;
+        }
         delay(1); //Dit is om het andere scherm te laten doven.
+
       break;
       case 2:
-        digitalWrite(sevenSeg3, HIGH); //Scherm 3 aan.
+        count3 = count3 + 1;
+
+        if (((count3 >= 1) && (count3 <= 50)) && (bcdLine == 1) || (bcdLine == 0) || (bcdLine == 2) )
+        {
+        digitalWrite(sevenSeg3, HIGH);
+
+        }
+        else if (((count3 > 100) && (count3 <= 100)) && (bcdLine == 1))
+        {
+         digitalWrite(sevenSeg3, LOW);
+        }
+
+        if (count3 > 100 && (bcdLine == 1))
+        {
+          count3 = 1;
+        }
         delay(1); //Dit is om het andere scherm te laten doven.
+
       break;
     }
     updateShiftRegister(); //Plaatst de data op het actieve 7-segmenten display.
