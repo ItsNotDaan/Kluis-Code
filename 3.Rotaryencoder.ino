@@ -19,9 +19,9 @@
 // ----- Declare subroutines and/or functions -----
 
 // ----- Declare Global Variables -----
-int rotaryKnop = A1;
-int rotaryLinks = A2;
-int rotaryRechts = A3;
+int rotaryKnop = 1;
+int rotaryLinks = 2;
+int rotaryRechts = 3;
 
 byte rotaryWaarde = 0;
 byte displayWaarde = 0;
@@ -80,13 +80,7 @@ void loop()
   laatsteDraaiwaarde = digitalRead(rotaryLinks);
   displayWaarde = rotaryWaarde / 2;
 
-  //Serial.print("De waarde van de knop is:");
+  Serial.print("De waarde van de knop is:");
   Serial.println(displayWaarde);
-  /*
-  Serial.print(" - ");
-  Serial.print(bcdWaarde[1]);
-  Serial.print(" - ");
-  Serial.print(bcdWaarde[2]);
-  Serial.print(" - ");
-  Serial.println(bcdWaarde[3]);*/
+
 }
