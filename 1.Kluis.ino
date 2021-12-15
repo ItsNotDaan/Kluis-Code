@@ -18,8 +18,15 @@
 // ----- Declare Objects -----
 
 // ----- Declare subroutines and/or functions -----
+void kijkRotaryKnop();
+int kijkGroeneKnop();
+bool kijkRodeKnop();
+void kijkRotaryencoder();
+void schermAansturen();
 
 // ----- Declare Global Variables -----
+
+Servo slotServo;
 
 /**************LED/Display*******************/
 
@@ -40,7 +47,7 @@ int dataPin = 10;  // Data pin of 74HC595 is connected to Digital pin 4 SER
 
 /**************Buzzer/Servo*******************/
 int geluidBuzzer = 11;
-int slotServo = 12;
+//int slotServo = 12;
 
 /**************Knoppen*******************/
 int knopSlot = 14; //14 = A0.
@@ -55,7 +62,7 @@ byte bcdWaarde[3] = {0, 0, 0}; //Maak een lege array
 byte rotaryWaarde = 0; //Dit slaat de huidige waarde van de rotary encoder op.
 byte displayWaarde = 0; //De waarde die op het scherm komt te staan.
 byte laatsteDraaiwaarde = 0; //Dit is om te ontdekken of er gedraaid wordt.
-byte bcdLine = 1; //Dit is om te zorgen dat de waardes niet tussen 0 en 9 komen.
+byte bcdLine = 0; //Dit is om te zorgen dat de waardes niet tussen 0 en 9 komen.
 bool rotaryGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool groenGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool roodGedrukt = LOW; //Dit is voor de knop voor een soort latch.
@@ -63,8 +70,10 @@ bool slotGedrukt = LOW;
 int count1 = 0;
 int count2 = 0;
 int count3 = 0;
+int servoPositie = 0;    // sla de positie van de servo op.
 
 byte codeIngevoerd = 0;
+
 
 // Setup
 void setup()
@@ -84,7 +93,7 @@ void setup()
   pinMode(dataPin, OUTPUT);
 
   pinMode(geluidBuzzer, OUTPUT);
-  pinMode(slotServo, OUTPUT);
+  slotServo.attach(12); //Servo is op poort 12.
 
   pinMode(knopSlot, INPUT_PULLUP);
   pinMode(knopGroen, INPUT_PULLUP);
@@ -121,6 +130,8 @@ void loop()
     unsigned long huidigeTijd = millis(); //tijd hoelang het programma al draait. Long omdat het om tijd gaat
     while (millis() - huidigeTijd < 1000) //doe voor het aantal seconden alles wat in de while staat.
     {
+      kijkRotaryencoder();
+      schermAansturen();
       Serial.println("Deur moet dicht");
       if((digitalRead(knopSlot) == HIGH) && (slotGedrukt == LOW));//Deur Dicht??
       {
@@ -248,13 +259,6 @@ void loop()
 }
 
 //////////////////////////////////////////////////////////////////////
-void updateShiftRegister()
-{
-  digitalWrite(latchPin, LOW); //Er mag data toegevoegd worden in het register.
-  shiftOut(dataPin, klokPin, MSBFIRST, data); //Shift de waarde van data in het register.
-  //MSB eerst. dus 0000 0110 wordt 0110 0000 als er wordt gekeken vanaf rechts.
-  digitalWrite(latchPin, HIGH); //Er mag geen data toegevoegd worden in het register.
-}
 
 /*bool kijkSlotKnop()
 {
@@ -303,11 +307,19 @@ int kijkGroeneKnop()
     int goeieCode = 0;
     for(int i = 0; i < 3; i++)
     {
+      Serial.print(bcdWaarde[i]);
+      Serial.println(pinCode[i]);
       if (bcdWaarde[i] == pinCode[i]) //is de ingevulde waarde de hoofdcode?
       {
         goeieCode++;
       }
     }
+
+    for(int i = 0; i < 3; i++) //
+    {
+      bcdWaarde[i] = 0;
+    }
+    bcdLine = 0;
 
     if(goeieCode == 3)
     {
@@ -444,6 +456,7 @@ void schermAansturen()
         if (count1 > 100 && (bcdLine == 2))
         {
           count1 = 1;
+          Serial.println("case 0");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
 
@@ -465,6 +478,7 @@ void schermAansturen()
         if (count2 > 100 && (bcdLine == 0))
         {
           count2 = 1;
+          Serial.println("case 1");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
 
@@ -485,11 +499,17 @@ void schermAansturen()
         if (count3 > 100 && (bcdLine == 1))
         {
           count3 = 1;
+          Serial.println("case 2");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
 
       break;
     }
-    updateShiftRegister(); //Plaatst de data op het actieve 7-segmenten display.
+    //updateShiftRegister(); //Plaatst de data op het actieve 7-segmenten display.
+
+    digitalWrite(latchPin, LOW); //Er mag data toegevoegd worden in het register.
+    shiftOut(dataPin, klokPin, MSBFIRST, data); //Shift de waarde van data in het register.
+    //MSB eerst. dus 0000 0110 wordt 0110 0000 als er wordt gekeken vanaf rechts.
+    digitalWrite(latchPin, HIGH); //Er mag geen data toegevoegd worden in het register.
+    }
   }
-}
