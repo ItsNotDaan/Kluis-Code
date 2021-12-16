@@ -36,7 +36,7 @@ int roodLED = 2; //De rode led.
 int sevenSeg1 = 5; //Het eerste seven segmenten display.
 int sevenSeg2 = 3; //Het tweede seven segmenten display.
 int sevenSeg3 = 4; //Het derde seven segmenten display.
-
+int sevenSeg4 = 13; //Het derde seven segmenten display.
 /**************IC/Encoder*******************/
 int rotaryLinks = 6; //De linker kant van de rotary encoder.
 int rotaryRechts = 7; //De rechter kant van de rotary encoder.
@@ -57,8 +57,8 @@ int knopRood = 17; //17 = A3.
 
 /**************Globale Variablen*******************/
 byte data;    //Stuurt de data van de rotary encoder naar het schuifregister
-byte pinCode[3] = {0, 0, 0}; //Dit is de pincode.
-byte bcdWaarde[3] = {0, 0, 0}; //Maak een lege array
+byte pinCode[4] = {0, 0, 0, 0}; //Dit is de pincode.
+byte bcdWaarde[4] = {0, 0, 0, 0}; //Maak een lege array
 byte rotaryWaarde = 0; //Dit slaat de huidige waarde van de rotary encoder op.
 byte displayWaarde = 0; //De waarde die op het scherm komt te staan.
 byte laatsteDraaiwaarde = 0; //Dit is om te ontdekken of er gedraaid wordt.
@@ -70,11 +70,10 @@ bool groenGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool roodGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool slotGedrukt = LOW;
 
-int knipperenLED = 0;
-unsigned long huidigeTijd;
 int count1 = 0;
 int count2 = 0;
 int count3 = 0;
+int count4 = 0;
 
 // Setup
 void setup()
@@ -86,6 +85,7 @@ void setup()
   pinMode(sevenSeg1, OUTPUT);
   pinMode(sevenSeg2, OUTPUT);
   pinMode(sevenSeg3, OUTPUT);
+pinMode(sevenSeg4, OUTPUT);
 
   pinMode(rotaryLinks, INPUT);
   pinMode(rotaryRechts, INPUT);
@@ -101,12 +101,12 @@ void setup()
   pinMode(knopRood, INPUT_PULLUP);
   pinMode(knopRotary, INPUT_PULLUP);
 
-  /*for (int i = 0; i < 3; i++) //Stop de opgeslagen pincode in de pincode variable.
+  /*for (int i = 0; i < 4; i++) //Stop de opgeslagen pincode in de pincode variable.
   {
     EEPROM.write(i, pinCode[i]);
   }*/
 
-  for (int i = 0; i < 3; i++) //Stop de opgeslagen pincode in de pincode variable.
+  for (int i = 0; i < 4; i++) //Stop de opgeslagen pincode in de pincode variable.
   {
     pinCode[i] = EEPROM.read(i);
   }
@@ -139,8 +139,8 @@ void loop()
   while(deurOpen == true)//Zolang de deur open is.
   {
     tone(geluidBuzzer,500,500);
-    huidigeTijd = millis(); //tijd hoelang het programma al draait. Long omdat het om tijd gaat
-    while (millis() - huidigeTijd < 1000 || deurOpen == true) //doe voor het aantal seconden alles wat in de while staat.
+    unsigned long huidigeTijd = millis(); //tijd hoelang het programma al draait. Long omdat het om tijd gaat
+    while (millis() - huidigeTijd < 1000) //doe voor het aantal seconden alles wat in de while staat.
     {
       if(millis() - huidigeTijd < 250)
       {
@@ -177,26 +177,14 @@ void loop()
     digitalWrite(groenLED, LOW);
   }
 
-  //KNIPPER GROEN
-  if(millis() - huidigeTijd > 1000)
-  {
-    huidigeTijd = millis();
-  }
-  if(millis() - huidigeTijd < 500)
-  {
-    digitalWrite(groenLED, HIGH);
-  }
-  if(millis() - huidigeTijd > 500)
-  {
-    digitalWrite(groenLED, LOW);
-  }
-
   /**************Check code*******************/
   int codeModus = kijkGroeneKnop(); //Modus 0 is niets. Modus 1 open. modus 2 alarm.
+  //KNIPPER GROEN
+
   if(codeModus == 1) //Goeie code
   {
     //reset de waardes in het systeem.
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < 4; i++)
     {
       bcdWaarde[i] = 0;
     }
@@ -207,21 +195,6 @@ void loop()
     bool wacht = true;
     while(wacht == true)
     {
-      if(millis() - huidigeTijd > 1000)
-      {
-        huidigeTijd = millis();
-      }
-      if(millis() - huidigeTijd < 500)
-      {
-        digitalWrite(roodLED, HIGH);
-        digitalWrite(groenLED, HIGH);
-      }
-      if(millis() - huidigeTijd > 500)
-      {
-        digitalWrite(roodLED, LOW);
-        digitalWrite(groenLED, LOW);
-      }
-
       schermAansturen();
       if((digitalRead(knopSlot) == HIGH) && (digitalRead(knopGroen) == HIGH) && (groenGedrukt == LOW)) //Deur dicht en groene knop ingedrukt? Deur dicht.
       {
@@ -234,7 +207,7 @@ void loop()
       if((digitalRead(knopRood) == HIGH) && (roodGedrukt == LOW) && (digitalRead(knopGroen) == LOW)) //Rode knop ingedrukt en de groene niet? Code veranderen
       {
         Serial.println("Verander de code");
-        for(int i = 0; i < 3; i++)
+        for(int i = 0; i < 4; i++)
         {
           bcdWaarde[i] = 0;
         }
@@ -243,19 +216,6 @@ void loop()
         bool wacht2 = true;
         while(wacht2 == true)
         {
-          if(millis() - huidigeTijd > 1000)
-          {
-            huidigeTijd = millis();
-          }
-          if(millis() - huidigeTijd < 500)
-          {
-            digitalWrite(groenLED, HIGH);
-          }
-          if(millis() - huidigeTijd > 500)
-          {
-            digitalWrite(groenLED, LOW);
-          }
-
           kijkRotaryKnop();
           kijkRotaryencoder();
           schermAansturen();
@@ -263,7 +223,7 @@ void loop()
           if(digitalRead(knopGroen) == HIGH && (groenGedrukt == LOW)) //Set nieuwe waarde als code.
           {
             Serial.println("Code verandert");
-            for(int i = 0; i < 3; i++)
+            for(int i = 0; i < 4; i++)
             {
               pinCode[i] = bcdWaarde[i];//Set de bcdWaarde als de code.
               if(EEPROM.read(i) != pinCode[i]) //Is de waarde op het bepaalde punt hetzelfde? dan niet schrijven.
@@ -277,15 +237,13 @@ void loop()
         }
       }
       roodGedrukt = digitalRead(knopRood); //Zodat er geen redruk komt.
-      digitalWrite(roodLED, LOW);
-      digitalWrite(groenLED, LOW);
     }
   }
 
   else if(codeModus == 2)//drie keer fout
   {
     Serial.println("Drie keer foute code");
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < 4; i++)
     {
       bcdWaarde[i] = 0;
     }
@@ -300,19 +258,6 @@ void loop()
       {
         //Serial.println("Maak een nieuwe code.");
 
-        if(millis() - huidigeTijd > 1000)
-        {
-          huidigeTijd = millis();
-        }
-        if(millis() - huidigeTijd < 500)
-        {
-          digitalWrite(groenLED, HIGH);
-        }
-        if(millis() - huidigeTijd > 500)
-        {
-          digitalWrite(groenLED, LOW);
-        }
-
         kijkRotaryencoder();
         kijkRotaryKnop();
         schermAansturen();
@@ -321,7 +266,7 @@ void loop()
         if((digitalRead(knopGroen) == HIGH) && (groenGedrukt == LOW)) //Set nieuwe waarde als code.
         {
           Serial.println("IN DE LOOP.");
-          for(int i = 0; i < 3; i++)
+          for(int i = 0; i < 4; i++)
           {
             if (pinCode[i] == bcdWaarde[i]) //is de ingevulde waarde de hoofdcode?
             {
@@ -329,14 +274,14 @@ void loop()
             }
           }
 
-          if(goeieCode == 3)//code goed?
+          if(goeieCode == 4)//code goed?
           {
             wacht = false;
             Serial.println("De code is goed.");
           }
           else//Reset de lines.
           {
-            for(int i = 0; i < 3; i++)
+            for(int i = 0; i < 4; i++)
             {
               bcdWaarde[i] = 0;
             }
@@ -369,7 +314,7 @@ void kijkRotaryKnop()
     bcdWaarde[bcdLine] = rotaryWaarde; //De waarde van de knop de waarde van bcdLine.
     bcdLine++; //Zoek data van het volgende scherm.
 
-    if(bcdLine == 3)// Als die 3 is moet die naar nummer 0 gaan.
+    if(bcdLine == 4)// Als die 3 is moet die naar nummer 0 gaan.
     {
       bcdLine = 0;
     }
@@ -392,7 +337,7 @@ int kijkGroeneKnop()
     codeIngevoerd++;
 
     int goeieCode = 0;
-    for(int i = 0; i < 3; i++)
+    for(int i = 0; i < 4; i++)
     {
       if (bcdWaarde[i] == pinCode[i]) //is de ingevulde waarde de hoofdcode?
       {
@@ -400,7 +345,7 @@ int kijkGroeneKnop()
       }
     }
 
-    if(goeieCode == 3) //Code goed?
+    if(goeieCode == 4) //Code goed?
     {
       digitalWrite(groenLED, HIGH);
       codeIngevoerd = 0; //Reset het aantal keer dat de code is ingevoer.
@@ -448,7 +393,7 @@ int kijkGroeneKnop()
         modus = 2;
       }
     }
-    for(int i = 0; i < 3; i++) // reset scherm
+    for(int i = 0; i < 4; i++) // reset scherm
     {
       bcdWaarde[i] = 0;
     }
@@ -487,7 +432,7 @@ void kijkRotaryencoder() //kijk of de rotary encoder draait.
 void schermAansturen()
 {
   /**************Rotary data to Register*******************/
-  for(int i = 0; i < 3; i++) //Doe 3 keer
+  for(int i = 0; i < 4; i++) //Doe 3 keer
   {
     if(bcdLine == i) //Is dit scherm geselecteerd?
     {
@@ -503,26 +448,26 @@ void schermAansturen()
     digitalWrite(sevenSeg1, LOW); //Zet alle schermen uit
     digitalWrite(sevenSeg2, LOW);
     digitalWrite(sevenSeg3, LOW);
-
+    digitalWrite(sevenSeg4, LOW);
     switch(i) //Zet seven segment aan welke data nodig heeft..
     {
       case 0:
         count1 = count1 + 1;
 
-        if (((count1 >= 1) && (count1 <= 50)) && (bcdLine == 2) || (bcdLine == 0) || (bcdLine == 1) )
+        if (((count1 >= 1) && (count1 <= 50)) && (bcdLine == 3) || (bcdLine == 0) || (bcdLine == 1) || (bcdLine == 2) )
         {
-        digitalWrite(sevenSeg1, HIGH);
+        digitalWrite(sevenSeg4, HIGH);
 
         }
-        else if (((count1 > 100) && (count1 <= 100)) && (bcdLine == 2))
+        else if (((count1 > 100) && (count1 <= 100)) && (bcdLine == 3))
         {
-         digitalWrite(sevenSeg1, LOW);
+         digitalWrite(sevenSeg4, LOW);
         }
 
-        if (count1 > 100 && (bcdLine == 2))
+        if (count1 > 100 && (bcdLine == 3))
         {
           count1 = 1;
-        //  Serial.println("case 0");
+          //Serial.println("case 0");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
       break;
@@ -530,7 +475,7 @@ void schermAansturen()
       case 1:
         count2 = count2 + 1;
 
-        if (((count2 >= 1) && (count2 <= 50)) && (bcdLine == 0) || (bcdLine == 2) || (bcdLine == 1) )
+        if (((count2 >= 1) && (count2 <= 50)) && (bcdLine == 0) || (bcdLine == 2) || (bcdLine == 1) || (bcdLine == 3) )
         {
         digitalWrite(sevenSeg2, HIGH);
 
@@ -543,7 +488,7 @@ void schermAansturen()
         if (count2 > 100 && (bcdLine == 0))
         {
           count2 = 1;
-        //  Serial.println("case 1");
+          //Serial.println("case 1");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
       break;
@@ -551,7 +496,7 @@ void schermAansturen()
       case 2:
         count3 = count3 + 1;
 
-        if (((count3 >= 1) && (count3 <= 50)) && (bcdLine == 1) || (bcdLine == 0) || (bcdLine == 2) )
+        if (((count3 >= 1) && (count3 <= 50)) && (bcdLine == 1) || (bcdLine == 0) || (bcdLine == 2) || (bcdLine == 3) )
         {
         digitalWrite(sevenSeg3, HIGH);
 
@@ -564,7 +509,28 @@ void schermAansturen()
         if (count3 > 100 && (bcdLine == 1))
         {
           count3 = 1;
-        //  Serial.println("case 2");
+          //Serial.println("case 2");
+        }
+        delay(1); //Dit is om het andere scherm te laten doven.
+      break;
+
+       case 3:
+        count4 = count4 + 1;
+
+        if ((((count4 >= 1) && (count4 <= 50)) && (bcdLine == 2)) || (bcdLine == 0) || (bcdLine == 1) || (bcdLine == 3) )
+        {
+        digitalWrite(sevenSeg1, HIGH);
+
+        }
+        else if (((count4 > 100) && (count4 <= 100)) && (bcdLine == 2))
+        {
+         digitalWrite(sevenSeg1, LOW);
+        }
+
+        if (count4 > 100 && (bcdLine == 2))
+        {
+          count4 = 1;
+          //Serial.println("case 3");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
       break;
