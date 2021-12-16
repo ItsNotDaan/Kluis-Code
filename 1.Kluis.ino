@@ -20,7 +20,6 @@
 // ----- Declare subroutines and/or functions -----
 void kijkRotaryKnop();
 int kijkGroeneKnop();
-bool kijkRodeKnop();
 void kijkRotaryencoder();
 void schermAansturen();
 
@@ -57,23 +56,22 @@ int knopRood = 17; //17 = A3.
 
 /**************Globale Variablen*******************/
 byte data;    //Stuurt de data van de rotary encoder naar het schuifregister
-byte pinCode[3] = {0, 0, 0};
+byte pinCode[3] = {0, 0, 0}; //Dit is de pincode.
 byte bcdWaarde[3] = {0, 0, 0}; //Maak een lege array
 byte rotaryWaarde = 0; //Dit slaat de huidige waarde van de rotary encoder op.
 byte displayWaarde = 0; //De waarde die op het scherm komt te staan.
 byte laatsteDraaiwaarde = 0; //Dit is om te ontdekken of er gedraaid wordt.
 byte bcdLine = 0; //Dit is om te zorgen dat de waardes niet tussen 0 en 9 komen.
+byte codeIngevoerd = 0; //Dit is om te kijken hoe vaak de code is ingevoerd.
+
 bool rotaryGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool groenGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool roodGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool slotGedrukt = LOW;
+
 int count1 = 0;
 int count2 = 0;
 int count3 = 0;
-int servoPositie = 0;    // sla de positie van de servo op.
-
-byte codeIngevoerd = 0;
-
 
 // Setup
 void setup()
@@ -121,7 +119,8 @@ void loop()
   if(digitalRead(knopSlot) == LOW)//Deur open??
   {
     deurOpen = true;
-  //  Serial.println("Deur open");
+    slotServo.write(0);//0 is deur open
+    Serial.println("Deur open");
   }
 
   while(deurOpen == true)//Zolang de deur open is.
@@ -132,19 +131,19 @@ void loop()
     {
       kijkRotaryencoder();
       schermAansturen();
-      Serial.println("Deur moet dicht");
+      //Serial.println("Deur moet dicht");
       if((digitalRead(knopSlot) == HIGH) && (slotGedrukt == LOW));//Deur Dicht??
       {
         deurOpen = false;
         Serial.println("Deur dicht");
-        //Deur moet op slot
+        slotServo.write(90);//90 is deur dicht.
       }
       slotGedrukt = digitalRead(knopSlot);
     }
   }
 
   /**************Check code*******************/
-  int codeModus = kijkGroeneKnop();
+  int codeModus = kijkGroeneKnop(); //Modus 0 is niets. Modus 1 open. modus 2 alarm.
   if(codeModus == 1) //Goeie code
   {
     //reset de waardes in het systeem.
@@ -155,7 +154,7 @@ void loop()
     bcdLine = 0;
 
     /**************Deur open + code kunnen veranderen*******************/
-    Serial.println("servo open");
+    Serial.println("Deur open");
     bool wacht = true;
     while(wacht == true)
     {
@@ -163,6 +162,7 @@ void loop()
       if((digitalRead(knopSlot) == HIGH) && (digitalRead(knopGroen) == HIGH) && (groenGedrukt == LOW)) //Deur dicht en groene knop ingedrukt? Deur dicht.
       {
         Serial.println("servo dicht");
+        slotServo.write(90);//90 is deur dicht.
         wacht = false;
       }
       groenGedrukt = digitalRead(knopGroen);
@@ -248,10 +248,10 @@ void loop()
     }
   }
 
-  kijkRotaryKnop();
 
   /**************Rotaryencoder*******************/
   kijkRotaryencoder();
+  kijkRotaryKnop();
 
   /**************Rotary data to Register*******************/
   schermAansturen();
@@ -259,22 +259,6 @@ void loop()
 }
 
 //////////////////////////////////////////////////////////////////////
-
-/*bool kijkSlotKnop()
-{
-  if(slotGedrukt == HIGH && digitalRead(knopSlot) == LOW)//Deur open??
-  {
-
-  }
-  slotGedrukt = digitalRead(knopSlot);
-
-  bool gedrukt = false;
-  if(digitalRead(knopSlot) == LOW)
-  {
-    gedrukt = true; //return true als
-  }
-  return gedrukt;
-}*/
 
 void kijkRotaryKnop()
 {
@@ -297,6 +281,7 @@ void kijkRotaryKnop()
 int kijkGroeneKnop()
 {
   int modus = 0;
+
   //Groene knop. Deze moet gedrukt worden als de waarde op het scherm ingevoerd moet worden.
   if(groenGedrukt == LOW && digitalRead(knopGroen) == HIGH) //Is er gedrukt?
   {
@@ -307,26 +292,18 @@ int kijkGroeneKnop()
     int goeieCode = 0;
     for(int i = 0; i < 3; i++)
     {
-      Serial.print(bcdWaarde[i]);
-      Serial.println(pinCode[i]);
       if (bcdWaarde[i] == pinCode[i]) //is de ingevulde waarde de hoofdcode?
       {
-        goeieCode++;
+        goeieCode++; //als de code drie keer goed is is goeieCode 3.
       }
     }
 
-    for(int i = 0; i < 3; i++) //
-    {
-      bcdWaarde[i] = 0;
-    }
-    bcdLine = 0;
-
-    if(goeieCode == 3)
+    if(goeieCode == 3) //Code goed?
     {
       codeIngevoerd = 0; //Reset het aantal keer dat de code is ingevoer.
       modus = 1; //open de kluis
-      //open kluis
-      Serial.println("Kluis open");
+
+      slotServo.write(0);//0 is deur open
 
       int a = 500;
       for(int i = 0; i < 5; i++)
@@ -342,13 +319,10 @@ int kijkGroeneKnop()
       tone(geluidBuzzer,1000,600);
       delay(600); //Goede code melding.
     }
-    else
+    else //Code niet goed?
     {
       Serial.println("code niet goed");
-      for (int i = 0; i < 3; i++) //reset de waardes op het scherm.
-      {
-        bcdWaarde[i] = 0;
-      }
+
       if(codeIngevoerd == 3) //Drie keer foute code?
       {
         codeIngevoerd = 0;
@@ -368,31 +342,17 @@ int kijkGroeneKnop()
         modus = 2;
       }
     }
+    for(int i = 0; i < 3; i++) // reset scherm
+    {
+      bcdWaarde[i] = 0;
+    }
+    bcdLine = 0;
   }
   groenGedrukt = digitalRead(knopGroen); //Zodat er geen redruk komt.
   return modus;
 }
 
-bool kijkRodeKnop()
-{
-  //Rode knop
-  if(roodGedrukt == LOW && digitalRead(knopRood) == HIGH) //Is er gedrukt?
-  {
-    tone(geluidBuzzer, 150, 50);
-
-    Serial.println("Knop is gedrukt");
-  }
-  roodGedrukt = digitalRead(knopRood); //Zodat er geen redruk komt.
-
-  bool gedrukt = false;
-  if(digitalRead(knopRood) == HIGH)
-  {
-    gedrukt = true; //return true als  knop rood is gedrukt
-  }
-  return gedrukt;
-}
-
-void kijkRotaryencoder()
+void kijkRotaryencoder() //kijk of de rotary encoder draait.
 {
   if(digitalRead(rotaryLinks) != laatsteDraaiwaarde) //Is er gedraaid?
   {
@@ -459,9 +419,8 @@ void schermAansturen()
           Serial.println("case 0");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
-
-
       break;
+
       case 1:
         count2 = count2 + 1;
 
@@ -481,8 +440,8 @@ void schermAansturen()
           Serial.println("case 1");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
-
       break;
+
       case 2:
         count3 = count3 + 1;
 
@@ -502,14 +461,12 @@ void schermAansturen()
           Serial.println("case 2");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
-
       break;
     }
-    //updateShiftRegister(); //Plaatst de data op het actieve 7-segmenten display.
 
     digitalWrite(latchPin, LOW); //Er mag data toegevoegd worden in het register.
     shiftOut(dataPin, klokPin, MSBFIRST, data); //Shift de waarde van data in het register.
     //MSB eerst. dus 0000 0110 wordt 0110 0000 als er wordt gekeken vanaf rechts.
     digitalWrite(latchPin, HIGH); //Er mag geen data toegevoegd worden in het register.
-    }
   }
+}
