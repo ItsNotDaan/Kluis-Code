@@ -229,6 +229,13 @@ void loop()
       if((digitalRead(knopSlot) == HIGH) && (digitalRead(knopGroen) == HIGH) && (groenGedrukt == LOW)) //Deur dicht en groene knop ingedrukt? Deur dicht.
       {
         Serial.println("Slot gaat erop, deur dicht.");
+        tone(geluidBuzzer,2000,300);
+        delay(200);
+        tone(geluidBuzzer,2000,300);
+        delay(200);
+        tone(geluidBuzzer,2000,600);
+        delay(600); //Goede code melding.
+
         slotServo.write(90);//90 is deur dicht.
         wacht = false;
       }
@@ -266,6 +273,14 @@ void loop()
           if(digitalRead(knopGroen) == HIGH && (groenGedrukt == LOW)) //Set nieuwe waarde als code.
           {
             Serial.println("Code verandert");
+
+            tone(geluidBuzzer,1750,300);
+            delay(400);
+            tone(geluidBuzzer,1900,300);
+            delay(400);
+            tone(geluidBuzzer,2000,600);
+            delay(1000); //Goede code melding.
+
             for(int i = 0; i < 4; i++)
             {
               pinCode[i] = bcdWaarde[i];//Set de bcdWaarde als de code.
@@ -323,6 +338,7 @@ void loop()
         int goeieCode = 0;
         if((digitalRead(knopGroen) == HIGH) && (groenGedrukt == LOW)) //Set nieuwe waarde als code.
         {
+          tone(geluidBuzzer, 2000, 50);
           for(int i = 0; i < 4; i++)
           {
             if (pinCode[i] == bcdWaarde[i]) //is de ingevulde waarde de hoofdcode?
@@ -333,16 +349,26 @@ void loop()
 
           if(goeieCode == 4)//code goed?
           {
+            tone(geluidBuzzer, 2000, 50);
+            delay(50);
+            tone(geluidBuzzer, 2000, 300);
+            delay(300);
             wacht = false;
             Serial.println("De code is goed.");
           }
-          else//Reset de lines.
+          else//Reset de lines.Code niet goed
           {
             for(int i = 0; i < 4; i++)
             {
               bcdWaarde[i] = 0;
             }
             bcdLine = 0;
+            tone(geluidBuzzer,2000,200);
+            delay(200);
+            tone(geluidBuzzer,1800,200);
+            delay(200);
+            tone(geluidBuzzer,1750,400);
+            delay(400);
           }
         }
         groenGedrukt = digitalRead(knopGroen);
@@ -448,6 +474,12 @@ int kijkGroeneKnop()
         delay(600);
         digitalWrite(roodLED, LOW);
         modus = 2;
+      }
+      else{
+        tone(geluidBuzzer,1800,300);
+        delay(400);
+        tone(geluidBuzzer,1750,600);
+        delay(600);
       }
     }
     for(int i = 0; i < 4; i++) // reset scherm
