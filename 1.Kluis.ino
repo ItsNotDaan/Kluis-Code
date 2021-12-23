@@ -140,9 +140,9 @@ void loop()
     while(deurOpen == true)//Zolang de deur open is.
     {
       tone(geluidBuzzer,500,500);
-
+      Serial.println("Deur open");
       huidigeTijd = millis(); //tijd hoelang het programma al draait. Long omdat het om tijd gaat
-      while((millis() - huidigeTijd < 1000) || (deurOpen == false)) //doe voor het aantal seconden alles wat in de while staat.
+      while((millis() - huidigeTijd < 1000)) //doe voor het aantal seconden alles wat in de while staat.
       {
         if(millis() - huidigeTijd < 250)
         {
