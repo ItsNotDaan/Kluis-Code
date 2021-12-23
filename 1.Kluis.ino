@@ -71,10 +71,10 @@ bool groenGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool roodGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool slotGedrukt = LOW;
 
-int count1 = 0;
-int count2 = 0;
-int count3 = 0;
-int count4 = 0;
+unsigned long count1 = 0;
+unsigned long count2 = 0;
+unsigned long count3 = 0;
+unsigned long count4 = 0;
 
 unsigned long huidigeTijd;
 
@@ -131,50 +131,52 @@ Knop Slot DONE
 void loop()
 {
   /**************Deur open?*******************/
-  bool deurOpen = false;
   if(digitalRead(knopSlot) == LOW)//Deur open??
   {
-    deurOpen = true;
+    bool deurOpen = true;
     slotServo.write(0);//0 is deur open
     Serial.println("Deur is open en moet dicht");
-  }
 
-  while(deurOpen == true)//Zolang de deur open is.
-  {
-    tone(geluidBuzzer,500,500);
-    huidigeTijd = millis(); //tijd hoelang het programma al draait. Long omdat het om tijd gaat
-    while (millis() - huidigeTijd < 1000 || deurOpen == true) //doe voor het aantal seconden alles wat in de while staat.
+    while(deurOpen == true)//Zolang de deur open is.
     {
-      if(millis() - huidigeTijd < 250)
+      tone(geluidBuzzer,500,500);
+
+      huidigeTijd = millis(); //tijd hoelang het programma al draait. Long omdat het om tijd gaat
+      while((millis() - huidigeTijd < 1000) || (deurOpen == false)) //doe voor het aantal seconden alles wat in de while staat.
       {
-        digitalWrite(roodLED, HIGH);
-        digitalWrite(groenLED, LOW);
+        if(millis() - huidigeTijd < 250)
+        {
+          digitalWrite(roodLED, HIGH);
+          digitalWrite(groenLED, LOW);
+        }
+        if((millis() - huidigeTijd < 500) && (millis() - huidigeTijd > 250))
+        {
+          digitalWrite(roodLED, LOW);
+          digitalWrite(groenLED, HIGH);
+        }
+        if((millis() - huidigeTijd < 750) && (millis() - huidigeTijd > 500))
+        {
+          digitalWrite(roodLED, HIGH);
+          digitalWrite(groenLED, LOW);
+        }
+        if((millis() - huidigeTijd < 1000) && (millis() - huidigeTijd > 750))
+        {
+          digitalWrite(roodLED, LOW);
+          digitalWrite(groenLED, HIGH);
+        }
+        kijkRotaryencoder();
+        kijkRotaryKnop();
+        schermAansturen();
+
+        //Serial.println("Deur moet dicht");
+        if((digitalRead(knopSlot) == HIGH) && (slotGedrukt == LOW))//Deur Dicht??
+        {
+          deurOpen = false;
+          Serial.println("Deur is dicht");
+          slotServo.write(90);//90 is deur dicht.
+        }
+        slotGedrukt = digitalRead(knopSlot);
       }
-      if((millis() - huidigeTijd < 500) && (millis() - huidigeTijd > 250))
-      {
-        digitalWrite(roodLED, LOW);
-        digitalWrite(groenLED, HIGH);
-      }
-      if((millis() - huidigeTijd < 750) && (millis() - huidigeTijd > 500))
-      {
-        digitalWrite(roodLED, HIGH);
-        digitalWrite(groenLED, LOW);
-      }
-      if((millis() - huidigeTijd < 1000) && (millis() - huidigeTijd > 750))
-      {
-        digitalWrite(roodLED, LOW);
-        digitalWrite(groenLED, HIGH);
-      }
-      kijkRotaryencoder();
-      schermAansturen();
-      //Serial.println("Deur moet dicht");
-      if((digitalRead(knopSlot) == HIGH) && (slotGedrukt == LOW));//Deur Dicht??
-      {
-        deurOpen = false;
-        Serial.println("Deur is dicht");
-        slotServo.write(90);//90 is deur dicht.
-      }
-      slotGedrukt = digitalRead(knopSlot);
     }
     digitalWrite(roodLED, LOW);
     digitalWrite(groenLED, LOW);
@@ -231,10 +233,8 @@ void loop()
         Serial.println("Slot gaat erop, deur dicht.");
         tone(geluidBuzzer,2000,300);
         delay(200);
-        tone(geluidBuzzer,2000,300);
-        delay(200);
-        tone(geluidBuzzer,2000,600);
-        delay(600); //Goede code melding.
+        tone(geluidBuzzer,2000,400);
+        delay(400); //Goede code melding.
 
         slotServo.write(90);//90 is deur dicht.
         wacht = false;
@@ -244,6 +244,9 @@ void loop()
       if((digitalRead(knopRood) == HIGH) && (roodGedrukt == LOW) && (digitalRead(knopGroen) == LOW)) //Rode knop ingedrukt en de groene niet? Code veranderen
       {
         Serial.println("Verander de code");
+
+        tone(geluidBuzzer,1900,800);
+
         for(int i = 0; i < 4; i++)
         {
           bcdWaarde[i] = 0;
@@ -274,12 +277,11 @@ void loop()
           {
             Serial.println("Code verandert");
 
-            tone(geluidBuzzer,1750,300);
+            tone(geluidBuzzer,1900,300);
             delay(400);
             tone(geluidBuzzer,1900,300);
             delay(400);
-            tone(geluidBuzzer,2000,600);
-            delay(1000); //Goede code melding.
+
 
             for(int i = 0; i < 4; i++)
             {
@@ -309,14 +311,20 @@ void loop()
     }
     bcdLine = 0;
 
+    unsigned long alarmTijd = millis();
     bool wacht = true;
     while(wacht == true)
     {
       tone(geluidBuzzer,1250,500);
-      unsigned long huidigeTijd = millis(); //tijd hoelang het programma al draait. Long omdat het om tijd gaat
+      huidigeTijd = millis(); //tijd hoelang het programma al draait. Long omdat het om tijd gaat
       while (millis() - huidigeTijd < 1000) //doe voor het aantal seconden alles wat in de while staat.
       {
         //Serial.println("Maak een nieuwe code.");
+
+        if (millis() - alarmTijd > 10000)//Minuut het alarm gehad?
+        {
+            wacht = false;
+        }
 
         if(millis() - huidigeTijd > 1000)
         {
