@@ -416,7 +416,7 @@ void kijkRotaryKnop() //Kijk of de rotary encoder knop wordt gedrukt.
   //Rotary knop
   if(rotaryGedrukt == LOW && digitalRead(knopRotary) == HIGH) //Is er gedrukt?
   {
-    tone(geluidBuzzer, 2000, 50);
+    tone(geluidBuzzer, 2000, 50); //Laat horen dat de knop is gedrukt
     bcdWaarde[bcdLine] = rotaryWaarde; //De waarde van de knop de waarde van bcdLine.
     bcdLine++; //Zoek data van het volgende scherm.
 
@@ -426,7 +426,7 @@ void kijkRotaryKnop() //Kijk of de rotary encoder knop wordt gedrukt.
     }
     rotaryWaarde = bcdWaarde[bcdLine]; //Stop de huidige data van dit scherm op het scherm.
 
-    Serial.println("Cijfer geset");
+    //Serial.println("Cijfer geset");
   }
   rotaryGedrukt = digitalRead(knopRotary); //Zodat er geen redruk komt.
 }
@@ -438,26 +438,27 @@ int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
   //Groene knop. Deze moet gedrukt worden als de waarde op het scherm ingevoerd moet worden.
   if(groenGedrukt == LOW && digitalRead(knopGroen) == HIGH) //Is er gedrukt?
   {
-    tone(geluidBuzzer, 2000, 50);
-    Serial.println("Groene knop gedrukt");
-    codeIngevoerd++;
+    tone(geluidBuzzer, 2000, 50); //Laat horen dat de knop is gedrukt
+    //Serial.println("Groene knop gedrukt");
+    codeIngevoerd++; //Het aantal keer dat de groene knop is gedrukt
 
-    int goeieCode = 0;
-    for(int i = 0; i < 4; i++)
+    int goeieCode = 0; //Variable om te kijken of de ingevoerde code juist is.
+    for(int i = 0; i < 4; i++) //doe vier keer.
     {
       if (bcdWaarde[i] == pinCode[i]) //is de ingevulde waarde de hoofdcode?
       {
-        goeieCode++; //als de code drie keer goed is is goeieCode 3.
+        goeieCode++; //als de code drie keer goed is, is goeieCode 4.
       }
     }
 
     if(goeieCode == 4) //Code goed?
     {
-      digitalWrite(groenLED, HIGH);
+      digitalWrite(groenLED, HIGH); //Groene led aan.
       modus = 1; //open de kluis
 
       slotServo.write(0);//0 is deur open
 
+      /***********Laat een deuntje horen dat de code goed is************/
       int a = 1000;
       for(int i = 0; i < 5; i++)
       {
@@ -475,17 +476,17 @@ int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
     }
     else //Code niet goed?
     {
-      Serial.println("Code niet goed");
-
+      //Serial.println("Code niet goed");
       if(codeIngevoerd == 3) //Drie keer foute code?
       {
         digitalWrite(roodLED, HIGH);
+        /***********Laat een deuntje horen dat de code vaak niet goed is************/
         int a = 1000;
         for(int i = 0; i < 5; i++)
         {
-        tone(geluidBuzzer,a,150);
-        delay(150);
-        a = a + 250;
+          tone(geluidBuzzer,a,150);
+          delay(150);
+          a = a + 250;
         }
         tone(geluidBuzzer,2000,300);
         delay(400);
@@ -497,6 +498,7 @@ int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
         modus = 2;
       }
       else{
+        /***********Laat een deuntje horen dat de code niet goed is************/
         tone(geluidBuzzer,1800,300);
         delay(400);
         tone(geluidBuzzer,1750,600);
@@ -510,7 +512,7 @@ int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
     bcdLine = 0;
   }
   groenGedrukt = digitalRead(knopGroen); //Zodat er geen redruk komt.
-  return modus;
+  return modus; //Stuur de waarde van modus terug.
 }
 
 void kijkRotaryencoder() //kijk of de rotary encoder draait.
