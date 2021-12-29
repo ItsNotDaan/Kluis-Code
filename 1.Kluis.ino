@@ -57,19 +57,16 @@ int knopGroen = 16; //16 = A2.
 int knopRood = 17; //17 = A3.
 
 /**************Globale Variablen*******************/
-byte data;    //Stuurt de data van de rotary encoder naar het schuifregister
 byte pinCode[4] = {0, 0, 0, 0}; //Dit is de pincode.
 byte bcdWaarde[4] = {0, 0, 0, 0}; //Maak een lege array
 byte rotaryWaarde = 0; //Dit slaat de huidige waarde van de rotary encoder op.
-byte displayWaarde = 0; //De waarde die op het scherm komt te staan.
 byte laatsteDraaiwaarde = 0; //Dit is om te ontdekken of er gedraaid wordt.
 byte bcdLine = 0; //Dit is om te zorgen dat de waardes niet tussen 0 en 9 komen.
-byte codeIngevoerd = 0; //Dit is om te kijken hoe vaak de code is ingevoerd.
 
 bool rotaryGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool groenGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool roodGedrukt = LOW; //Dit is voor de knop voor een soort latch.
-bool slotGedrukt = LOW;
+bool slotGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 
 unsigned long count1 = 0;
 unsigned long count2 = 0;
@@ -134,36 +131,37 @@ void loop()
   if(digitalRead(knopSlot) == LOW)//Deur open??
   {
     bool deurOpen = true;
-    slotServo.write(0);//0 is deur open
-    Serial.println("Deur is open en moet dicht");
+    slotServo.write(0); //0 is deur open
+    //Serial.println("Deur is open en moet dicht");
 
     while(deurOpen == true)//Zolang de deur open is.
     {
-      tone(geluidBuzzer,500,500);
-      Serial.println("Deur open");
+      tone(geluidBuzzer,500,500); //Alarm aan voor 500ms
+      //Serial.println("Deur open");
       huidigeTijd = millis(); //tijd hoelang het programma al draait. Long omdat het om tijd gaat
       while((millis() - huidigeTijd < 1000)) //doe voor het aantal seconden alles wat in de while staat.
       {
-        if(millis() - huidigeTijd < 250)
+        if(millis() - huidigeTijd < 250) //Tijd onder de 250ms?
         {
           digitalWrite(roodLED, HIGH);
           digitalWrite(groenLED, LOW);
         }
-        if((millis() - huidigeTijd < 500) && (millis() - huidigeTijd > 250))
+        if((millis() - huidigeTijd < 500) && (millis() - huidigeTijd > 250)) //Tijd onder de 500ms?
         {
           digitalWrite(roodLED, LOW);
           digitalWrite(groenLED, HIGH);
         }
-        if((millis() - huidigeTijd < 750) && (millis() - huidigeTijd > 500))
+        if((millis() - huidigeTijd < 750) && (millis() - huidigeTijd > 500)) //Tijd onder de 750ms?
         {
           digitalWrite(roodLED, HIGH);
           digitalWrite(groenLED, LOW);
         }
-        if((millis() - huidigeTijd < 1000) && (millis() - huidigeTijd > 750))
+        if((millis() - huidigeTijd < 1000) && (millis() - huidigeTijd > 750)) //Tijd onder de 1000ms?
         {
           digitalWrite(roodLED, LOW);
           digitalWrite(groenLED, HIGH);
         }
+
         kijkRotaryencoder();
         kijkRotaryKnop();
         schermAansturen();
@@ -171,29 +169,40 @@ void loop()
         //Serial.println("Deur moet dicht");
         if((digitalRead(knopSlot) == HIGH) && (slotGedrukt == LOW))//Deur Dicht??
         {
-          deurOpen = false;
-          Serial.println("Deur is dicht");
+          deurOpen = false; //stop de while loop.
+          //Serial.println("Deur is dicht");
           slotServo.write(90);//90 is deur dicht.
         }
         slotGedrukt = digitalRead(knopSlot);
       }
     }
-    digitalWrite(roodLED, LOW);
-    digitalWrite(groenLED, LOW);
+    digitalWrite(roodLED, LOW); //Rode led uit
+    digitalWrite(groenLED, LOW); //Groene led uit
   }
 
+  /*****************Input Code Function***********************/
+
+    /**************Rotaryencoder*******************/
+    kijkRotaryencoder();
+    kijkRotaryKnop();
+
+    /**********Rotary data to Register*************/
+    schermAansturen();
+
+  /**********************************************************/
+
   //KNIPPER GROEN
-  if(millis() - huidigeTijd > 1000)
+  if(millis() - huidigeTijd > 1000) //tijd boven de 1000ms?
   {
-    huidigeTijd = millis();
+    huidigeTijd = millis(); //sla de huidige tijd op.
   }
-  if(millis() - huidigeTijd < 500)
+  if(millis() - huidigeTijd < 500) //Tijd onder de 500ms?
   {
-    digitalWrite(groenLED, HIGH);
+    digitalWrite(groenLED, HIGH); //groene led aan
   }
-  if(millis() - huidigeTijd > 500)
+  if(millis() - huidigeTijd > 500) //Tijd boven de 500ms?
   {
-    digitalWrite(groenLED, LOW);
+    digitalWrite(groenLED, LOW); //groene led uit
   }
 
   /**************Check code*******************/
@@ -228,6 +237,7 @@ void loop()
       }
 
       schermAansturen();
+
       if((digitalRead(knopSlot) == HIGH) && (digitalRead(knopGroen) == HIGH) && (groenGedrukt == LOW)) //Deur dicht en groene knop ingedrukt? Deur dicht.
       {
         Serial.println("Slot gaat erop, deur dicht.");
@@ -269,9 +279,16 @@ void loop()
             digitalWrite(groenLED, LOW);
           }
 
-          kijkRotaryKnop();
-          kijkRotaryencoder();
-          schermAansturen();
+          /*****************Input Code Function***********************/
+
+            /**************Rotaryencoder*******************/
+            kijkRotaryencoder();
+            kijkRotaryKnop();
+
+            /**********Rotary data to Register*************/
+            schermAansturen();
+
+          /**********************************************************/
 
           if(digitalRead(knopGroen) == HIGH && (groenGedrukt == LOW)) //Set nieuwe waarde als code.
           {
@@ -339,9 +356,16 @@ void loop()
           digitalWrite(groenLED, LOW);
         }
 
-        kijkRotaryencoder();
-        kijkRotaryKnop();
-        schermAansturen();
+        /*****************Input Code Function***********************/
+
+          /**************Rotaryencoder*******************/
+          kijkRotaryencoder();
+          kijkRotaryKnop();
+
+          /**********Rotary data to Register*************/
+          schermAansturen();
+
+        /**********************************************************/
 
         int goeieCode = 0;
         if((digitalRead(knopGroen) == HIGH) && (groenGedrukt == LOW)) //Set nieuwe waarde als code.
@@ -383,20 +407,11 @@ void loop()
       }
     }
   }
-
-
-  /**************Rotaryencoder*******************/
-  kijkRotaryencoder();
-  kijkRotaryKnop();
-
-  /**************Rotary data to Register*******************/
-  schermAansturen();
-  //Serial.println(bcdLine);
 }
 
 //////////////////////////////////////////////////////////////////////
 
-void kijkRotaryKnop()
+void kijkRotaryKnop() //Kijk of de rotary encoder knop wordt gedrukt.
 {
   //Rotary knop
   if(rotaryGedrukt == LOW && digitalRead(knopRotary) == HIGH) //Is er gedrukt?
@@ -416,10 +431,10 @@ void kijkRotaryKnop()
   rotaryGedrukt = digitalRead(knopRotary); //Zodat er geen redruk komt.
 }
 
-int kijkGroeneKnop()
+int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
 {
-  int modus = 0;
-
+  byte modus = 0; //Dit is om te kijken wat de modus is.
+  byte codeIngevoerd = 0; //Dit is om te kijken hoe vaak de code is ingevoerd.
   //Groene knop. Deze moet gedrukt worden als de waarde op het scherm ingevoerd moet worden.
   if(groenGedrukt == LOW && digitalRead(knopGroen) == HIGH) //Is er gedrukt?
   {
@@ -439,7 +454,6 @@ int kijkGroeneKnop()
     if(goeieCode == 4) //Code goed?
     {
       digitalWrite(groenLED, HIGH);
-      codeIngevoerd = 0; //Reset het aantal keer dat de code is ingevoer.
       modus = 1; //open de kluis
 
       slotServo.write(0);//0 is deur open
@@ -466,7 +480,6 @@ int kijkGroeneKnop()
       if(codeIngevoerd == 3) //Drie keer foute code?
       {
         digitalWrite(roodLED, HIGH);
-        codeIngevoerd = 0;
         int a = 1000;
         for(int i = 0; i < 5; i++)
         {
@@ -526,8 +539,10 @@ void kijkRotaryencoder() //kijk of de rotary encoder draait.
   laatsteDraaiwaarde = digitalRead(rotaryLinks); //Sla waarde op van de laatste positie.
 }
 
-void schermAansturen()
+void schermAansturen() //laat waardes zien op het scherm
 {
+  byte data;    //Stuurt de data van de rotary encoder naar het schuifregister
+
   /**************Rotary data to Register*******************/
   for(int i = 0; i < 4; i++) //Doe 3 keer
   {
