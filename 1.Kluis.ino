@@ -29,6 +29,7 @@ void schermAansturen();
 Servo slotServo;
 
 /**************LED/Display*******************/
+int pos;
 
 int groenLED = 1; //De groene led.
 int roodLED = 2; //De rode led.
@@ -78,7 +79,7 @@ unsigned long huidigeTijd;
 // Setup
 void setup()
 {
-  Serial.begin(9600);
+  //Serial.begin(9600);
 
   pinMode(groenLED, OUTPUT);
   pinMode(roodLED, OUTPUT);
@@ -131,7 +132,12 @@ void loop()
   if(digitalRead(knopSlot) == LOW)//Deur open??
   {
     bool deurOpen = true;
-    slotServo.write(0); //0 is deur open
+
+
+    for(pos = 0; pos <= 90; pos += 1) { //Deur openen
+      slotServo.write(pos);
+      delay(10);
+    }
     //Serial.println("Deur is open en moet dicht");
 
     while(deurOpen == true)//Zolang de deur open is.
@@ -171,7 +177,11 @@ void loop()
         {
           deurOpen = false; //stop de while loop.
           //Serial.println("Deur is dicht");
-          slotServo.write(90);//90 is deur dicht.
+        //  slotServo.write(90);//90 is deur dicht.
+          for(pos = 90; pos >= 0; pos -= 1) { //Deur Dicht
+            slotServo.write(pos);
+            delay(10);
+          }
         }
         slotGedrukt = digitalRead(knopSlot);
       }
@@ -217,7 +227,7 @@ void loop()
     bcdLine = 0;
 
     /**************Deur open + code kunnen veranderen*******************/
-    Serial.println("Deur gaat open");
+    //Serial.println("Deur gaat open");
     bool wacht = true;
     while(wacht == true)
     {
@@ -240,20 +250,24 @@ void loop()
 
       if((digitalRead(knopSlot) == HIGH) && (digitalRead(knopGroen) == HIGH) && (groenGedrukt == LOW)) //Deur dicht en groene knop ingedrukt? Deur dicht.
       {
-        Serial.println("Slot gaat erop, deur dicht.");
+        //Serial.println("Slot gaat erop, deur dicht.");
         tone(geluidBuzzer,2000,300);
         delay(200);
         tone(geluidBuzzer,2000,400);
         delay(400); //Goede code melding.
 
-        slotServo.write(90);//90 is deur dicht.
+      //  slotServo.write(90);//90 is deur dicht.
+        for(pos = 90; pos >= 0; pos -= 1) { //Deur dicht
+          slotServo.write(pos);
+          delay(10);
+        }
         wacht = false;
       }
       groenGedrukt = digitalRead(knopGroen);
 
       if((digitalRead(knopRood) == HIGH) && (roodGedrukt == LOW) && (digitalRead(knopGroen) == LOW)) //Rode knop ingedrukt en de groene niet? Code veranderen
       {
-        Serial.println("Verander de code");
+        //Serial.println("Verander de code");
 
         tone(geluidBuzzer,1900,800);
 
@@ -292,7 +306,7 @@ void loop()
 
           if(digitalRead(knopGroen) == HIGH && (groenGedrukt == LOW)) //Set nieuwe waarde als code.
           {
-            Serial.println("Code verandert");
+            //Serial.println("Code verandert");
 
             tone(geluidBuzzer,1900,300);
             delay(400);
@@ -321,7 +335,7 @@ void loop()
 
   else if(codeModus == 2)//drie keer fout
   {
-    Serial.println("Drie keer foute code");
+    //Serial.println("Drie keer foute code");
     for(int i = 0; i < 4; i++)
     {
       bcdWaarde[i] = 0;
@@ -386,7 +400,7 @@ void loop()
             tone(geluidBuzzer, 2000, 300);
             delay(300);
             wacht = false;
-            Serial.println("De code is goed.");
+            //Serial.println("De code is goed.");
           }
           else//Reset de lines.Code niet goed
           {
@@ -456,7 +470,10 @@ int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
       digitalWrite(groenLED, HIGH); //Groene led aan.
       modus = 1; //open de kluis
 
-      slotServo.write(0);//0 is deur open
+      for (pos = 0; pos <= 90; pos += 1) { //Deur open;
+        slotServo.write(pos);
+        delay(10);
+      }
 
       /***********Laat een deuntje horen dat de code goed is************/
       int a = 1000;
@@ -525,7 +542,7 @@ void kijkRotaryencoder() //kijk of de rotary encoder draait.
       else //Niet 18? Dan +1
       {
         rotaryWaarde++; //Tel 1 op
-        Serial.print(rotaryWaarde);
+        //Serial.print(rotaryWaarde);
       }
     }
     else //Draai naar links.
@@ -534,7 +551,7 @@ void kijkRotaryencoder() //kijk of de rotary encoder draait.
       else // Niet 0? Dan -1
       {
         rotaryWaarde--; //Trek 1 af.
-        Serial.print(rotaryWaarde);
+        //Serial.print(rotaryWaarde);
       }
     }
   }

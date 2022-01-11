@@ -19,9 +19,9 @@
 // ----- Declare subroutines and/or functions -----
 
 // ----- Declare Global Variables -----
-int rotaryKnop = 1;
-int rotaryLinks = 2;
-int rotaryRechts = 3;
+int rotaryKnop = 3;
+int rotaryLinks = 4;
+int rotaryRechts = 5;
 
 byte rotaryWaarde = 0;
 byte displayWaarde = 0;
