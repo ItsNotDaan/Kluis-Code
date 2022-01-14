@@ -63,6 +63,7 @@ byte bcdWaarde[4] = {0, 0, 0, 0}; //Maak een lege array
 byte rotaryWaarde = 0; //Dit slaat de huidige waarde van de rotary encoder op.
 byte laatsteDraaiwaarde = 0; //Dit is om te ontdekken of er gedraaid wordt.
 byte bcdLine = 0; //Dit is om te zorgen dat de waardes niet tussen 0 en 9 komen.
+byte codeIngevoerd = 0; //Dit is om te kijken hoe vaak de code is ingevoerd.
 
 bool rotaryGedrukt = LOW; //Dit is voor de knop voor een soort latch.
 bool groenGedrukt = LOW; //Dit is voor de knop voor een soort latch.
@@ -261,6 +262,13 @@ void loop()
           slotServo.write(pos);
           delay(10);
         }
+
+        for(int i = 0; i < 4; i++)
+        {
+          bcdWaarde[i] = 0;
+        }
+        bcdLine = 0;
+
         wacht = false;
       }
       groenGedrukt = digitalRead(knopGroen);
@@ -448,7 +456,6 @@ void kijkRotaryKnop() //Kijk of de rotary encoder knop wordt gedrukt.
 int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
 {
   byte modus = 0; //Dit is om te kijken wat de modus is.
-  byte codeIngevoerd = 0; //Dit is om te kijken hoe vaak de code is ingevoerd.
   //Groene knop. Deze moet gedrukt worden als de waarde op het scherm ingevoerd moet worden.
   if(groenGedrukt == LOW && digitalRead(knopGroen) == HIGH) //Is er gedrukt?
   {
@@ -496,6 +503,7 @@ int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
       //Serial.println("Code niet goed");
       if(codeIngevoerd == 3) //Drie keer foute code?
       {
+        codeIngevoerd = 0;
         digitalWrite(roodLED, HIGH);
         /***********Laat een deuntje horen dat de code vaak niet goed is************/
         int a = 1000;
@@ -514,12 +522,16 @@ int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
         digitalWrite(roodLED, LOW);
         modus = 2;
       }
-      else{
+      else
+      {
         /***********Laat een deuntje horen dat de code niet goed is************/
-        tone(geluidBuzzer,1800,300);
-        delay(400);
-        tone(geluidBuzzer,1750,600);
-        delay(600);
+        for(int i = 0; i < codeIngevoerd; i++) //aantalkeer dat de code fout is.
+        {
+          tone(geluidBuzzer,1800,200);
+          delay(600);
+        }
+        //tone(geluidBuzzer,1750,600);
+        //delay(600);
       }
     }
     for(int i = 0; i < 4; i++) // reset scherm
