@@ -1,6 +1,6 @@
 /*
   Name: Kluis
-  Date:
+  Date: 14-01-2022
   Author: Daan Heetkamp, Bram Geerdink
 
   Description: Een kluis die dicht en open kan gaan.
@@ -114,37 +114,26 @@ void setup()
   }
 }
 
-/*  To do
-Servo DONE
-*Buzzer* DONE
-Led groen
-Led Rood
-Knop groen DONE
-Knop rood DONE
-Knop Slot DONE
-
-*/
-
-
 // Main loop
 void loop()
 {
+
   /**************Deur open?*******************/
   if(digitalRead(knopSlot) == LOW)//Deur open??
   {
     bool deurOpen = true;
 
-
     for(pos = 0; pos <= 90; pos += 1) { //Deur openen
       slotServo.write(pos);
       delay(10);
     }
-    //Serial.println("Deur is open en moet dicht");
 
     while(deurOpen == true)//Zolang de deur open is.
     {
       tone(geluidBuzzer,500,500); //Alarm aan voor 500ms
+
       //Serial.println("Deur open");
+
       huidigeTijd = millis(); //tijd hoelang het programma al draait. Long omdat het om tijd gaat
       while((millis() - huidigeTijd < 1000)) //doe voor het aantal seconden alles wat in de while staat.
       {
@@ -174,11 +163,11 @@ void loop()
         schermAansturen();
 
         //Serial.println("Deur moet dicht");
+
         if((digitalRead(knopSlot) == HIGH) && (slotGedrukt == LOW))//Deur Dicht??
         {
-          deurOpen = false; //stop de while loop.
-          //Serial.println("Deur is dicht");
-        //  slotServo.write(90);//90 is deur dicht.
+          //Serial.println("Deur is dicht")
+          deurOpen = false; //stop de while loop.;
           for(pos = 90; pos >= 0; pos -= 1) { //Deur Dicht
             slotServo.write(pos);
             delay(10);
@@ -220,15 +209,16 @@ void loop()
   int codeModus = kijkGroeneKnop(); //Modus 0 is niets. Modus 1 open. modus 2 alarm.
   if(codeModus == 1) //Goeie code
   {
-    //reset de waardes in het systeem.
-    for(int i = 0; i < 4; i++)
+    for(int i = 0; i < 4; i++) //reset de waardes in het systeem.
     {
       bcdWaarde[i] = 0;
     }
     bcdLine = 0;
 
     /**************Deur open + code kunnen veranderen*******************/
+
     //Serial.println("Deur gaat open");
+
     bool wacht = true;
     while(wacht == true)
     {
@@ -251,23 +241,18 @@ void loop()
 
       if((digitalRead(knopSlot) == HIGH) && (digitalRead(knopGroen) == HIGH) && (groenGedrukt == LOW)) //Deur dicht en groene knop ingedrukt? Deur dicht.
       {
+
         //Serial.println("Slot gaat erop, deur dicht.");
+
         tone(geluidBuzzer,2000,300);
         delay(200);
         tone(geluidBuzzer,2000,400);
         delay(400); //Goede code melding.
 
-      //  slotServo.write(90);//90 is deur dicht.
         for(pos = 90; pos >= 0; pos -= 1) { //Deur dicht
           slotServo.write(pos);
           delay(10);
         }
-
-        for(int i = 0; i < 4; i++)
-        {
-          bcdWaarde[i] = 0;
-        }
-        bcdLine = 0;
 
         wacht = false;
       }
@@ -275,6 +260,7 @@ void loop()
 
       if((digitalRead(knopRood) == HIGH) && (roodGedrukt == LOW) && (digitalRead(knopGroen) == LOW)) //Rode knop ingedrukt en de groene niet? Code veranderen
       {
+
         //Serial.println("Verander de code");
 
         tone(geluidBuzzer,1900,800);
@@ -344,6 +330,7 @@ void loop()
   else if(codeModus == 2)//drie keer fout
   {
     //Serial.println("Drie keer foute code");
+
     for(int i = 0; i < 4; i++)
     {
       bcdWaarde[i] = 0;
@@ -456,11 +443,13 @@ void kijkRotaryKnop() //Kijk of de rotary encoder knop wordt gedrukt.
 int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
 {
   byte modus = 0; //Dit is om te kijken wat de modus is.
+
   //Groene knop. Deze moet gedrukt worden als de waarde op het scherm ingevoerd moet worden.
   if(groenGedrukt == LOW && digitalRead(knopGroen) == HIGH) //Is er gedrukt?
   {
-    tone(geluidBuzzer, 2000, 50); //Laat horen dat de knop is gedrukt
     //Serial.println("Groene knop gedrukt");
+
+    tone(geluidBuzzer, 2000, 50); //Laat horen dat de knop is gedrukt
     codeIngevoerd++; //Het aantal keer dat de groene knop is gedrukt
 
     int goeieCode = 0; //Variable om te kijken of de ingevoerde code juist is.
@@ -474,6 +463,9 @@ int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
 
     if(goeieCode == 4) //Code goed?
     {
+      //Serial.println("Juiste code");
+      codeIngevoerd = 0; //Reset het aantal keer dat de code is geprobeerd.
+
       digitalWrite(groenLED, HIGH); //Groene led aan.
       modus = 1; //open de kluis
 
@@ -503,9 +495,11 @@ int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
       //Serial.println("Code niet goed");
       if(codeIngevoerd == 3) //Drie keer foute code?
       {
-        codeIngevoerd = 0;
+        codeIngevoerd = 0; //Reset het aantal keer dat de code is geprobeerd.
+
         digitalWrite(roodLED, HIGH);
-        /***********Laat een deuntje horen dat de code vaak niet goed is************/
+
+        /***********Laat een deuntje horen dat de code drie keer niet goed is************/
         int a = 1000;
         for(int i = 0; i < 5; i++)
         {
@@ -522,18 +516,16 @@ int kijkGroeneKnop() //Kijk of de groene knop wordt gedrukt.
         digitalWrite(roodLED, LOW);
         modus = 2;
       }
-      else
-      {
+      else{
         /***********Laat een deuntje horen dat de code niet goed is************/
         for(int i = 0; i < codeIngevoerd; i++) //aantalkeer dat de code fout is.
         {
           tone(geluidBuzzer,1800,200);
           delay(600);
         }
-        //tone(geluidBuzzer,1750,600);
-        //delay(600);
       }
     }
+
     for(int i = 0; i < 4; i++) // reset scherm
     {
       bcdWaarde[i] = 0;
@@ -554,7 +546,6 @@ void kijkRotaryencoder() //kijk of de rotary encoder draait.
       else //Niet 18? Dan +1
       {
         rotaryWaarde++; //Tel 1 op
-        //Serial.print(rotaryWaarde);
       }
     }
     else //Draai naar links.
@@ -563,7 +554,6 @@ void kijkRotaryencoder() //kijk of de rotary encoder draait.
       else // Niet 0? Dan -1
       {
         rotaryWaarde--; //Trek 1 af.
-        //Serial.print(rotaryWaarde);
       }
     }
   }
@@ -610,7 +600,6 @@ void schermAansturen() //laat waardes zien op het scherm
         if (count1 > 100 && (bcdLine == 3))
         {
           count1 = 1;
-          //Serial.println("case 0");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
       break;
@@ -631,7 +620,6 @@ void schermAansturen() //laat waardes zien op het scherm
         if (count2 > 100 && (bcdLine == 0))
         {
           count2 = 1;
-          //Serial.println("case 1");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
       break;
@@ -652,7 +640,6 @@ void schermAansturen() //laat waardes zien op het scherm
         if (count3 > 100 && (bcdLine == 1))
         {
           count3 = 1;
-          //Serial.println("case 2");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
       break;
@@ -673,7 +660,6 @@ void schermAansturen() //laat waardes zien op het scherm
         if (count4 > 100 && (bcdLine == 2))
         {
           count4 = 1;
-          //Serial.println("case 3");
         }
         delay(1); //Dit is om het andere scherm te laten doven.
       break;
